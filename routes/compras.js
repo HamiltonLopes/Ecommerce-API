@@ -19,7 +19,7 @@ router.post('/', async function (req, res, next) {
     error = true;
   }
 
-  if(error || captureResult.Status != 2){
+  if(error || captureResult?.Status != 2){
     console.log("Erro de comunicação com Cielo, transferindo transação para Pagarme.");
     try {
       result = await payment.compra(req.body, "Pagarme");
@@ -47,28 +47,29 @@ router.post('/', async function (req, res, next) {
 /* GET status compras. */
 router.get('/:compra_id/status', async function (req, res, next) {
   const { compra_id } = req.params;
+  let result;
   try{
-    const result = await payment.consulta(compra_id);
+    result = await payment.consulta(compra_id);
   }catch(error){
     console.error(error.response.data);
   }
-  res.send("ok");
-  // let resJson = { message: "" };
-  // switch (result.Payment.Status) {
-  //   case 1:
-  //     resJson.message = "Pagamento Autorizado.";
-  //     break;
-  //   case 2:
-  //     resJson.message = "Pagamento Confirmado.";
-  //     break;
-  //   case 12:
-  //     resJson.message = "Pagamento Pendente.";
-  //     break;
-  //   default:
-  //     resJson.message = "Erro no pagamento.";
-  //     break;
-  // }
-  // return res.status(200).json(resJson);
+  let resJson = { message: "" };
+  switch (result.Payment?.Status ? result.Payment.Status : result.status) {
+    case 1:
+      resJson.message = "Pagamento Autorizado.";
+      break;
+    case 2:
+    case 200:
+      resJson.message = "Pagamento Confirmado.";
+      break;
+    case 12:
+      resJson.message = "Pagamento Pendente.";
+      break;
+    default:
+      resJson.message = "Erro no pagamento.";
+      break;
+  }
+  return res.status(200).json(resJson);
 });
 
 module.exports = router;
